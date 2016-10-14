@@ -63,43 +63,37 @@ LINK_DIRECTORIES(
     ${LIBLTDL_LIBRARY_DIRS})
 
 ADD_LIBRARY(cocaine-io-util SHARED
-    src/encoder.cpp
     src/errors.cpp
     src/header.cpp
     src/trace.cpp)
 
 ADD_LIBRARY(cocaine-core SHARED
-    src/actor.cpp
-    src/actor_unix.cpp
     src/api.cpp
     src/api/storage.cpp
     src/chamber.cpp
-    src/cluster/multicast.cpp
-    src/cluster/predefine.cpp
+#    src/cluster/multicast.cpp
+#    src/cluster/predefine.cpp
     src/context.cpp
-    src/context/config.cpp
-    src/context/mapper.cpp
-    src/crypto.cpp
-    src/decoder.cpp
-    src/defaults.cpp
-    src/dispatch.cpp
-    src/dynamic.cpp
-    src/engine.cpp
-    src/essentials.cpp
-    src/gateway/adhoc.cpp
-    src/logging.cpp
-    src/repository.cpp
-    src/service/locator.cpp
-    src/service/locator/routing.cpp
-    src/service/logging.cpp
-    src/service/runtime.cpp
-    src/service/storage.cpp
-    src/session.cpp
-    src/signal.cpp
-    src/storage/files.cpp
-    src/trace/logger.cpp
-    src/unicorn/value.cpp
-    src/unique_id.cpp)
+#    src/context/config.cpp
+#    src/crypto.cpp
+#    src/defaults.cpp
+#    src/dynamic.cpp
+#    src/essentials.cpp
+#    src/gateway/adhoc.cpp
+#    src/logging.cpp
+#    src/repository.cpp
+#    src/service/locator.cpp
+#    src/service/locator/routing.cpp
+#    src/service/logging.cpp
+#    src/service/runtime.cpp
+#    src/service/storage.cpp
+#    src/session.cpp
+#    src/signal.cpp
+#    src/storage/files.cpp
+#    src/trace/logger.cpp
+#    src/unicorn/value.cpp
+#    src/unique_id.cpp
+)
 
 TARGET_LINK_LIBRARIES(cocaine-io-util
     blackhole

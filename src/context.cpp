@@ -20,18 +20,12 @@
 
 #include "cocaine/context.hpp"
 
-#include "cocaine/api/service.hpp"
 #include "cocaine/context/config.hpp"
 #include "cocaine/context/filter.hpp"
 #include "cocaine/context/mapper.hpp"
-#include "cocaine/context/signal.hpp"
 #include "cocaine/detail/essentials.hpp"
-#include "cocaine/engine.hpp"
 #include "cocaine/format.hpp"
-#include "cocaine/idl/context.hpp"
 #include "cocaine/logging.hpp"
-#include "cocaine/rpc/actor.hpp"
-#include "cocaine/repository/service.hpp"
 
 #include <boost/optional/optional.hpp>
 
@@ -44,6 +38,8 @@
 #include <deque>
 #include <boost/algorithm/string/join.hpp>
 #include <cocaine/detail/trace/logger.hpp>
+
+
 
 namespace cocaine {
 
@@ -66,7 +62,7 @@ using namespace cocaine::io;
 using blackhole::scope::holder_t;
 
 class context_impl_t : public context_t {
-    typedef std::deque<std::pair<std::string, std::unique_ptr<actor_t>>> service_list_t;
+//    typedef std::deque<std::pair<std::string, std::unique_ptr<actor_t>>> service_list_t;
 
     // TODO: There was an idea to use the Repository to enable pluggable sinks and whatever else for
     // for the Blackhole, when all the common stuff is extracted to a separate library.
@@ -81,10 +77,9 @@ class context_impl_t : public context_t {
 
     // Services are stored as a vector of pairs to preserve the initialization order. Synchronized,
     // because services are allowed to start and stop other services during their lifetime.
-    synchronized<service_list_t> m_services;
+//    synchronized<service_list_t> m_services;
 
-    // Context signalling hub.
-    retroactive_signal<io::context_tag> m_signals;
+    //TODO: signalling hub
 
     // Metrics.
     metrics::registry_t m_metrics_registry;
@@ -206,11 +201,6 @@ public:
         return *m_repository;
     }
 
-    retroactive_signal<io::context_tag>&
-    signal_hub() {
-        return m_signals;
-    }
-
     metrics::registry_t&
     metrics_hub() {
         return m_metrics_registry;
@@ -227,7 +217,7 @@ public:
     }
 
     void
-    insert(const std::string& name, std::unique_ptr<actor_t> service) {
+    insert(const std::string& name, service_t) {
         const holder_t scoped(*m_log, {{"source", "core"}});
 
         const actor_t& actor = *service;

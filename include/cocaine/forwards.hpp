@@ -49,7 +49,6 @@ class registry_t;
 
 namespace cocaine {
 
-class actor_t;
 struct config_t;
 class context_t;
 class execution_unit_t;
@@ -57,10 +56,6 @@ class port_mapping_t;
 class trace_t;
 class filter_t;
 
-
-template<class> class dispatch;
-template<class> class upstream;
-template<class> class retroactive_signal;
 
 class dynamic_t;
 
@@ -91,39 +86,7 @@ typedef std::vector<header_t> header_storage_t;
 
 namespace cocaine { namespace io {
 
-// used for context signals
-struct context_tag;
-
-// I/O threads
-
 class chamber_t;
-
-// I/O streams
-
-template<class, class>
-class readable_stream;
-
-template<class, class>
-class writable_stream;
-
-// Stream composition
-
-struct encoder_t;
-struct decoder_t;
-
-template<class, class = encoder_t, class = decoder_t>
-struct transport;
-
-// Generic RPC objects
-
-class basic_dispatch_t;
-class basic_upstream_t;
-
-typedef std::shared_ptr<const basic_dispatch_t> dispatch_ptr_t;
-typedef std::shared_ptr<      basic_upstream_t> upstream_ptr_t;
-
-template<class>
-struct protocol;
 
 }} // namespace cocaine::io
 

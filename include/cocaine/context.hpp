@@ -53,35 +53,12 @@ public:
     repository() const = 0;
 
     virtual
-    retroactive_signal<io::context_tag>&
-    signal_hub() = 0;
-
-    virtual
     metrics::registry_t&
     metrics_hub() = 0;
 
     virtual
     const config_t&
     config() const = 0;
-
-    virtual
-    port_mapping_t&
-    mapper() = 0;
-
-    // Service API
-    virtual
-    void
-    insert(const std::string& name, std::unique_ptr<actor_t> service) = 0;
-
-    virtual
-    auto
-    remove(const std::string& name) -> std::unique_ptr<actor_t> = 0;
-
-    virtual
-    auto
-    locate(const std::string& name) const -> boost::optional<const actor_t&> = 0;
-
-    // Network I/O
 
     virtual
     auto
