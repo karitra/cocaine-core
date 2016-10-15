@@ -95,12 +95,25 @@ ADD_LIBRARY(cocaine-core SHARED
 #    src/unique_id.cpp
 )
 
-TARGET_LINK_LIBRARIES(cocaine-io-util
-    blackhole
-    ${Boost_LIBRARIES})
+SET(PROTO_SRC
+        error.proto
+        storage.proto
+)
+
+FOREACH(PROTO_FILE ${PROTO_SRC})
+    string(REGEX REPLACE "[^a-zA-Z]" "" PROTO_CUR_TARGET "proto-${PROTO_FILE}")
+    MESSAGE(${PROTO_CUR_TARGET})
+    ADD_CUSTOM_TARGET(${PROTO_CUR_TARGET}
+            "mkdir" "-p" "${CMAKE_CURRENT_SOURCE_DIR}/proto_generated"
+            COMMAND
+            "protoc"
+            "--cpp_out=${CMAKE_CURRENT_SOURCE_DIR}/proto_generated"
+            ${PROTO_FILE}
+            WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/proto)
+    ADD_DEPENDENCIES(cocaine-core ${PROTO_CUR_TARGET})
+ENDFOREACH()
 
 TARGET_LINK_LIBRARIES(cocaine-core
-    cocaine-io-util
     ${Boost_LIBRARIES}
     ${LIBBFD_LIBRARY}
     ltdl

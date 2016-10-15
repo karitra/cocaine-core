@@ -1,0 +1,29 @@
+syntax = "proto3";
+
+message Key {
+    bytes value = 1;
+}
+
+message Chunk {
+    bytes value = 1;
+}
+
+
+message WriteRequest {
+    message WriteParam {
+        string collection = 1;
+        string key = 2;
+        repeated string tag = 3;
+    }
+    oneof param_or_chunk {
+        WriteParam param = 1;
+        Chunk chunk = 2;
+    }
+}
+
+message Void {}
+
+service Storage {
+    rpc Read (Key) returns (stream Chunk) {}
+    rpc Write (stream WriteRequest) returns (Void) {}
+}

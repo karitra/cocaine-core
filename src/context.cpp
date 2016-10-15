@@ -38,6 +38,7 @@
 #include <boost/algorithm/string/join.hpp>
 #include <boost/optional/optional.hpp>
 
+#include <grpc++/grpc++.h>
 #include <metrics/registry.hpp>
 
 #include <deque>
@@ -109,9 +110,6 @@ public:
 
         // Load the rest of plugins.
         m_repository->load(m_config->path().plugins());
-
-        // Spin up all the configured services, launch execution units.
-        COCAINE_LOG_INFO(m_log, "starting {:d} execution unit(s)", m_config->network().pool());
 
         COCAINE_LOG_INFO(m_log, "starting {:d} service(s)", m_config->services().size());
 
