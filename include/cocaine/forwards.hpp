@@ -51,7 +51,6 @@ namespace cocaine {
 
 struct config_t;
 class context_t;
-class execution_unit_t;
 class port_mapping_t;
 class trace_t;
 class filter_t;

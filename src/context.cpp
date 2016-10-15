@@ -20,24 +20,27 @@
 
 #include "cocaine/context.hpp"
 
+#include "cocaine/api/service.hpp"
 #include "cocaine/context/config.hpp"
 #include "cocaine/context/filter.hpp"
 #include "cocaine/context/mapper.hpp"
 #include "cocaine/detail/essentials.hpp"
+#include "cocaine/detail/trace/logger.hpp"
 #include "cocaine/format.hpp"
 #include "cocaine/logging.hpp"
 
-#include <boost/optional/optional.hpp>
+#include <asio/io_service.hpp>
 
 #include <blackhole/logger.hpp>
 #include <blackhole/scope/holder.hpp>
 #include <blackhole/wrapper.hpp>
 
+#include <boost/algorithm/string/join.hpp>
+#include <boost/optional/optional.hpp>
+
 #include <metrics/registry.hpp>
 
 #include <deque>
-#include <boost/algorithm/string/join.hpp>
-#include <cocaine/detail/trace/logger.hpp>
 
 
 
@@ -62,7 +65,7 @@ using namespace cocaine::io;
 using blackhole::scope::holder_t;
 
 class context_impl_t : public context_t {
-//    typedef std::deque<std::pair<std::string, std::unique_ptr<actor_t>>> service_list_t;
+    typedef std::deque<std::pair<std::string, std::unique_ptr<api::service_t>>> service_list_t;
 
     // TODO: There was an idea to use the Repository to enable pluggable sinks and whatever else for
     // for the Blackhole, when all the common stuff is extracted to a separate library.
@@ -72,12 +75,9 @@ class context_impl_t : public context_t {
     // storages or isolates, have to be declared after this one.
     std::unique_ptr<api::repository_t> m_repository;
 
-    // A pool of execution units - threads responsible for doing all the service invocations.
-    std::vector<std::unique_ptr<execution_unit_t>> m_pool;
-
     // Services are stored as a vector of pairs to preserve the initialization order. Synchronized,
     // because services are allowed to start and stop other services during their lifetime.
-//    synchronized<service_list_t> m_services;
+    synchronized<service_list_t> m_services;
 
     //TODO: signalling hub
 
@@ -113,10 +113,6 @@ public:
         // Spin up all the configured services, launch execution units.
         COCAINE_LOG_INFO(m_log, "starting {:d} execution unit(s)", m_config->network().pool());
 
-        while (m_pool.size() != m_config->network().pool()) {
-            m_pool.emplace_back(std::make_unique<execution_unit_t>(*this));
-        }
-
         COCAINE_LOG_INFO(m_log, "starting {:d} service(s)", m_config->services().size());
 
         std::vector<std::string> errored;
@@ -129,13 +125,7 @@ public:
             COCAINE_LOG_DEBUG(m_log, "starting service");
 
             try {
-                insert(name, std::make_unique<actor_t>(*this, asio, repository().get<api::service_t>(
-                    service.type(),
-                    *this,
-                    *asio,
-                    name,
-                    service.args()
-                )));
+                //TODO: init service
             } catch (const std::system_error& e) {
                 COCAINE_LOG_ERROR(m_log, "unable to initialize service: {}", error::to_string(e));
                 errored.push_back(name);
@@ -157,7 +147,8 @@ public:
                                    errored.size(), errored_str
             );
         } else {
-            m_signals.invoke<io::context::prepared>();
+            //m_signals.invoke<io::context::prepared>();
+            //TODO: signaling
         }
     }
 
@@ -216,123 +207,14 @@ public:
         return m_mapper;
     }
 
-    void
-    insert(const std::string& name, service_t) {
-        const holder_t scoped(*m_log, {{"source", "core"}});
-
-        const actor_t& actor = *service;
-
-        m_services.apply([&](service_list_t& list) {
-            auto it = std::find_if(list.begin(), list.end(), match{name});
-            if(it != list.end()) {
-                throw cocaine::error_t("service '{}' already exists", name);
-            }
-
-            service->run();
-
-            COCAINE_LOG_DEBUG(m_log, "service has been started", {
-                { "service", { name }}
-            });
-
-            list.emplace_back(name, std::move(service));
-        });
-
-        // Fire off the signal to alert concerned subscribers about the service removal event.
-        m_signals.invoke<context::service::exposed>(actor.prototype().name(), std::forward_as_tuple(
-            actor.endpoints(),
-            actor.prototype().version(),
-            actor.prototype().root()
-        ));
-    }
-
-    std::unique_ptr<actor_t>
-    remove(const std::string& name) {
-        const holder_t scoped(*m_log, {{"source", "core"}});
-
-        std::unique_ptr<actor_t> service;
-
-        m_services.apply([&](service_list_t& list) {
-            auto it = std::find_if(list.begin(), list.end(), match{name});
-            if(it != list.end()) {
-                service = std::move(it->second);
-                list.erase(it);
-            } else {
-                throw cocaine::error_t("service '{}' doesn't exist", name);
-            }
-        });
-
-        service->terminate();
-
-        COCAINE_LOG_DEBUG(m_log, "service has been stopped", {
-            { "service", name }
-        });
-
-        // Service is already terminated, so there's no reason to try to get its endpoints.
-        std::vector<asio::ip::tcp::endpoint> nothing;
-
-        // Fire off the signal to alert concerned subscribers about the service termination event.
-        m_signals.invoke<context::service::removed>(service->prototype().name(), std::forward_as_tuple(
-            nothing,
-            service->prototype().version(),
-            service->prototype().root()
-        ));
-
-        return service;
-    }
-
-    boost::optional<const actor_t&>
-    locate(const std::string& name) const {
-        return m_services.apply([&](const service_list_t& list) -> boost::optional<const actor_t&> {
-            auto it = std::find_if(list.begin(), list.end(), match{name});
-            if (it == list.end()) {
-                return boost::none;
-            }
-
-            return boost::optional<const actor_t&>(it->second->is_active(), *it->second);
-        });
-    }
-
-    execution_unit_t&
-    engine() {
-        typedef std::unique_ptr<execution_unit_t> unit_t;
-        auto comp = [](const unit_t& lhs, const unit_t& rhs) {
-            return lhs->utilization() < rhs->utilization();
-        };
-        return **std::min_element(m_pool.begin(), m_pool.end(), comp);
-    }
 
     void
     terminate() {
         COCAINE_LOG_INFO(m_log, "stopping {:d} service(s)", m_services->size());
 
-        // Fire off to alert concerned subscribers about the shutdown. This signal happens before all
-        // the outstanding connections are closed, so services have a chance to send their last wishes.
-        m_signals.invoke<context::shutdown>();
-
-        // Stop the service from accepting new clients or doing any processing. Pop them from the active
-        // service list into this temporary storage, and then destroy them all at once. This is needed
-        // because sessions in the execution units might still have references to the services, and their
-        // lives have to be extended until those sessions are active.
-        std::vector<std::unique_ptr<actor_t>> actors;
-
-        m_config->services().each([&](const std::string& name, const config_t::component_t&){
-            try {
-                actors.push_back(remove(name));
-            } catch (...) {
-                // A service might be absent because it has failed to start during the bootstrap.
-            }
-        });
-
         // There should be no outstanding services left. All the extra services spawned by others, like
         // app invocation services from the node service, should be dead by now.
         BOOST_ASSERT(m_services->empty());
-
-        COCAINE_LOG_INFO(m_log, "stopping {:d} execution unit(s)", m_pool.size());
-
-        m_pool.clear();
-
-        // Destroy the service objects.
-        actors.clear();
 
         reset_logger_filter();
 

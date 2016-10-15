@@ -59,10 +59,6 @@ public:
     virtual
     const config_t&
     config() const = 0;
-
-    virtual
-    auto
-    engine() -> execution_unit_t& = 0;
 };
 
 std::unique_ptr<context_t>
