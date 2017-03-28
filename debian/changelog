@@ -1,3 +1,10 @@
+cocaine-core (0.12.12.4) unstable; urgency=low
+
+  * Non-maintainer upload.
+  * Fixed: specify upper metrics-dev version constraint.
+
+ -- Evgeny Safronov <division494@gmail.com>  Tue, 28 Mar 2017 15:38:02 +0300
+
 cocaine-core (0.12.12.3) unstable; urgency=low
 
   * Non-maintainer upload.
