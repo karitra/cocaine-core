@@ -62,7 +62,7 @@ public:
    ~chamber_t();
 
     auto
-    io_service() const -> const io::io_service& {
+    io_service() const -> const asio::io_service& {
         return *asio;
     }
 
