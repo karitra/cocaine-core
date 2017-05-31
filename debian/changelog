@@ -1,3 +1,10 @@
+cocaine-core (0.12.13.4) unstable; urgency=low
+
+  * Non-maintainer upload.
+  * Backported fix: Quadratic complexity in encoder is linear now (#183).
+
+ -- Anton Matveenko <antmat@me.com>  Wed, 31 May 2017 07:56:56 +0300
+
 cocaine-core (0.12.13.3) unstable; urgency=low
 
   * Non-maintainer upload.
