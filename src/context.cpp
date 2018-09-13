@@ -400,6 +400,14 @@ public:
         // Destroy the service objects.
         actors.clear();
 
+        // Terminate all acceptors listeners with associated sockets, so it be would possible
+        // to safely destroy m_acceptor_thread with its inner io loop.
+        m_services.apply([] (service_list_t& li) {
+            for (const auto& it : li) {
+                it.second->terminate();
+            }
+        });
+
         // Due the race between stopping m_acceptor_thread and handling 'on_shutdown' signal by Node service,
         // m_acceptor_thread should be completely destroyed only when all services, including Node, are destroyed.
         // Does not block, unlike the one in execution_unit_t's destructors.
